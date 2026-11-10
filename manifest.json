@@ -1,1 +1,21 @@
 
+{
+  "id": "/ai-trade-buddy/",
+  "name": "AI Trade Buddy",
+  "short_name": "Trade Buddy",
+  "description": "Delta Exchange Market Analysis App",
+  "start_url": "/ai-trade-buddy/",
+  "scope": "/ai-trade-buddy/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101827",
+  "theme_color": "#101827",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
+
