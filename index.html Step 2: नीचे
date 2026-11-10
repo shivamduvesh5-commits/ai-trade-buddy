@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080d18">
+<title>AI Trade Buddy</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d18;color:#fff;font-family:Arial,sans-serif;padding:20px}
+h1{color:#48a9ff}
+.card{background:#151f30;border:1px solid #29384d;border-radius:14px;padding:16px;margin:14px 0}
+select,button{padding:13px;border-radius:9px;border:0;font-size:15px}
+select{background:#26364c;color:white;width:100%;margin:10px 0}
+button{background:#087eeb;color:white;width:100%;font-weight:bold}
+.small{color:#a8b6ca;font-size:13px}
+.green{color:#35db91}
+.yellow{color:#ffd166}
+</style>
+</head>
+<body>
+<h1>🤖 AI Trade Buddy</h1>
+<p class="small">Your Personal Crypto Trading Assistant</p>
+
+<div class="card">
+<h3>📊 Select Market</h3>
+<select id="market">
+<option>BTCUSD</option>
+<option>ETHUSD</option>
+<option>SOLUSD</option>
+<option>BNBUSD</option>
+<option>XRPUSD</option>
+<option>DOGEUSD</option>
+<option>ADAUSD</option>
+<option>LINKUSD</option>
+<option>AVAXUSD</option>
+<option>Other</option>
+</select>
+
+<h3>⏱ Select Timeframe</h3>
+<select id="time">
+<option>5 Minutes</option>
+<option>15 Minutes</option>
+<option>1 Hour</option>
+<option>4 Hours</option>
+<option>1 Day</option>
+</select>
+
+<h3>Analysis Mode</h3>
+<select>
+<option>Both - Technical + Fundamental</option>
+<option>Technical</option>
+<option>Fundamental</option>
+</select>
+
+<h3>Strategy</h3>
+<select>
+<option>Both - Scalping + Swing</option>
+<option>Scalping</option>
+<option>Swing Trading</option>
+</select>
+
+<button onclick="analyze()">Analyze Market</button>
+</div>
+
+<div class="card">
+<h3>🧠 AI Analysis</h3>
+<div id="result">
+<p class="yellow">Waiting for market analysis...</p>
+</div>
+<p class="small">Demo interface: No live market data or verified trading signal connected yet.</p>
+</div>
+
+<div class="card">
+<h3>🛡️ Risk Management</h3>
+<p>Always use Stop Loss.</p>
+<p>Risk per trade: 1% maximum (suggested)</p>
+<p>Never trade on an unverified signal.</p>
+</div>
+
+<script>
+function analyze(){
+let market=document.getElementById("market").value;
+let time=document.getElementById("time").value;
+document.getElementById("result").innerHTML=
+"<p>Market: "+market+"</p>"+
+"<p>Timeframe: "+time+"</p>"+
+"<p class='yellow'>Analysis engine not connected.</p>"+
+"<p>Live data connection is required before generating a real signal.</p>";
+}
+</script>
+</body>
+</html>
