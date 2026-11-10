@@ -14,12 +14,13 @@ h1{color:#42a5ff}
 select,button{width:100%;padding:14px;margin:8px 0;border-radius:9px;border:0}
 button{background:#087eeb;color:white;font-weight:bold}
 select{background:#293950;color:white}
+.price{font-size:28px;color:#35db91;font-weight:bold}
 small{color:#aab8cc}
 </style>
 </head>
 <body>
 <h1>🤖 AI Trade Buddy</h1>
-<p>Your Personal Crypto Trading Assistant</p>
+<p>Delta Exchange India Live Market</p>
 
 <div class="card">
 <h3>📊 Select Market</h3>
@@ -27,67 +28,60 @@ small{color:#aab8cc}
 <option>BTCUSD</option>
 <option>ETHUSD</option>
 <option>SOLUSD</option>
-<option>BNBUSD</option>
 <option>XRPUSD</option>
 <option>DOGEUSD</option>
-<option>ADAUSD</option>
-<option>LINKUSD</option>
-<option>AVAXUSD</option>
+<option>BNBUSD</option>
 </select>
 
-<h3>⏱ Timeframe</h3>
-<select id="time">
-<option>5 Minutes</option>
-<option>15 Minutes</option>
-<option>1 Hour</option>
-<option>4 Hours</option>
-<option>1 Day</option>
-</select>
-
-<button onclick="analyze()">Analyze Market</button>
+<h3>Live Price</h3>
+<div id="price" class="price">Loading...</div>
+<p id="mark">Mark Price: --</p>
+<p id="volume">24h Volume: --</p>
+<p id="status">Connecting...</p>
+<button onclick="loadMarket()">Refresh Price</button>
 </div>
 
 <div class="card">
-<h3>🧠 Market Analysis</h3>
-<div id="result">Waiting for analysis...</div>
-<small>Demo only. Live market data is not connected.</small>
-</div>
-
-<div class="card">
-<h3>🛡 Risk Management</h3>
-<p>Always use Stop Loss.</p>
-<p>Suggested risk limit: 1% per trade.</p>
-</div>
-
-<div class="card">
-<button id="install" hidden>Install App</button>
+<h3>🧠 AI Analysis</h3>
+<p id="analysis">Live AI analysis not connected yet.</p>
+<small>Market data only. No trading signals generated.</small>
 </div>
 
 <script>
-function analyze(){
-let m=document.getElementById("market").value;
-let t=document.getElementById("time").value;
-document.getElementById("result").innerHTML=
-"Market: "+m+"<br>Timeframe: "+t+
-"<br><br>Live AI analysis is not connected yet.";
+const API="https://api.india.delta.exchange";
+
+async function loadMarket(){
+ const symbol=document.getElementById("market").value;
+ const status=document.getElementById("status");
+ status.textContent="Fetching live data...";
+ try{
+  const response=await fetch(API+"/v2/tickers");
+  if(!response.ok) throw new Error("API error "+response.status);
+  const data=await response.json();
+  const tickers=data.result||[];
+  const ticker=tickers.find(x=>x.symbol===symbol);
+  if(!ticker) throw new Error("Market not found: "+symbol);
+
+  document.getElementById("price").textContent=
+   "₹ "+(ticker.close||ticker.last_price||"Unavailable");
+  document.getElementById("mark").textContent=
+   "Mark Price: "+(ticker.mark_price||"--");
+  document.getElementById("volume").textContent=
+   "24h Volume: "+(ticker.volume||"--");
+  status.textContent="Live data updated: "+new Date().toLocaleTimeString();
+ }catch(error){
+  status.textContent="Data unavailable: "+error.message;
+  document.getElementById("price").textContent="Unavailable";
+ }
 }
-let installPrompt;
-window.addEventListener("beforeinstallprompt",e=>{
-e.preventDefault();
-installPrompt=e;
-document.getElementById("install").hidden=false;
-});
-document.getElementById("install").onclick=async()=>{
-if(!installPrompt)return;
-installPrompt.prompt();
-installPrompt=null;
-};
+
+document.getElementById("market").addEventListener("change",loadMarket);
+loadMarket();
+setInterval(loadMarket,15000);
+
 if("serviceWorker" in navigator){
-window.addEventListener("load",()=>{
-navigator.serviceWorker.register("./service-worker.js");
-});
+ navigator.serviceWorker.register("./service-worker.js");
 }
 </script>
 </body>
 </html>
-
