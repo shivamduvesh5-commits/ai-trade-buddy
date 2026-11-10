@@ -1,86 +1,192 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#080d18">
-<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#101827">
+<link rel="manifest" href="manifest.json">
 <title>AI Trade Buddy</title>
 <style>
-body{background:#080d18;color:white;font-family:Arial;padding:18px}
-h1{color:#42a5ff}
-.card{background:#172337;padding:18px;border-radius:14px;margin:15px 0}
-select,button{width:100%;padding:14px;margin:8px 0;border-radius:9px;border:0}
-button{background:#087eeb;color:white;font-weight:bold}
-select{background:#293950;color:white}
-.price{font-size:28px;color:#35db91;font-weight:bold}
-small{color:#aab8cc}
+*{box-sizing:border-box}
+body{margin:0;padding:18px;background:#101827;color:white;font-family:Arial,sans-serif}
+h1{color:#55d6a0}
+.card{background:#1d293b;padding:16px;border-radius:14px;margin:14px 0}
+select,button{width:100%;padding:13px;margin-top:10px;border:0;border-radius:9px;font-size:16px}
+button{background:#25bd83;color:#071b14;font-weight:bold}
+.price{font-size:27px;font-weight:bold}
+.muted{color:#b6c2d2}
+#signal{font-size:24px;font-weight:bold}
 </style>
 </head>
 <body>
-<h1>🤖 AI Trade Buddy</h1>
-<p>Delta Exchange India Live Market</p>
+<h1>AI Trade Buddy</h1>
+<p class="muted">Delta Exchange India • Live Market Analysis</p>
 
 <div class="card">
-<h3>📊 Select Market</h3>
-<select id="market">
-<option>BTCUSD</option>
-<option>ETHUSD</option>
-<option>SOLUSD</option>
-<option>XRPUSD</option>
-<option>DOGEUSD</option>
-<option>BNBUSD</option>
+<h3>Select Market</h3>
+<select id="market"><option value="BTCUSD">BTCUSD</option></select>
+<h3>Timeframe</h3>
+<select id="timeframe">
+<option value="1m">1 Minute</option>
+<option value="5m">5 Minutes</option>
+<option value="15m">15 Minutes</option>
+<option value="1h" selected>1 Hour</option>
+<option value="4h">4 Hours</option>
+<option value="1d">1 Day</option>
 </select>
-
-<h3>Live Price</h3>
-<div id="price" class="price">Loading...</div>
-<p id="mark">Mark Price: --</p>
-<p id="volume">24h Volume: --</p>
-<p id="status">Connecting...</p>
-<button onclick="loadMarket()">Refresh Price</button>
 </div>
 
 <div class="card">
-<h3>🧠 AI Analysis</h3>
-<p id="analysis">Live AI analysis not connected yet.</p>
-<small>Market data only. No trading signals generated.</small>
+<h3>Live Market Price</h3>
+<div class="price" id="price">Loading...</div>
+<p id="mark" class="muted">Mark Price: --</p>
+<p id="volume" class="muted">24h Volume: --</p>
+<p id="status" class="muted">Connecting...</p>
+</div>
+
+<div class="card">
+<h3>Market Analysis</h3>
+<button onclick="runAnalysis()">ANALYZE MARKET</button>
+<h2 id="signal">Waiting...</h2>
+<p id="reason" class="muted">Analysis अभी शुरू नहीं हुआ।</p>
+<p id="rsi">RSI: --</p>
+<p id="ema">EMA: --</p>
+<p id="entry">Entry: --</p>
+<p id="sl">Stop Loss: --</p>
+<p id="target">Target: --</p>
+<p id="analysisStatus" class="muted">Analysis not started</p>
 </div>
 
 <script>
 const API="https://api.india.delta.exchange";
+const $=id=>document.getElementById(id);
 
-async function loadMarket(){
- const symbol=document.getElementById("market").value;
- const status=document.getElementById("status");
- status.textContent="Fetching live data...";
+async function getTickers(){
+ const r=await fetch(API+"/v2/tickers");
+ if(!r.ok) throw Error("Ticker API error "+r.status);
+ const j=await r.json();
+ if(!j.result) throw Error("Market list unavailable");
+ return j.result;
+}
+
+async function loadMarkets(){
  try{
-  const response=await fetch(API+"/v2/tickers");
-  if(!response.ok) throw new Error("API error "+response.status);
-  const data=await response.json();
-  const tickers=data.result||[];
-  const ticker=tickers.find(x=>x.symbol===symbol);
-  if(!ticker) throw new Error("Market not found: "+symbol);
-
-  document.getElementById("price").textContent=
-   "₹ "+(ticker.close||ticker.last_price||"Unavailable");
-  document.getElementById("mark").textContent=
-   "Mark Price: "+(ticker.mark_price||"--");
-  document.getElementById("volume").textContent=
-   "24h Volume: "+(ticker.volume||"--");
-  status.textContent="Live data updated: "+new Date().toLocaleTimeString();
- }catch(error){
-  status.textContent="Data unavailable: "+error.message;
-  document.getElementById("price").textContent="Unavailable";
+  const tickers=await getTickers();
+  const select=$("market");
+  const old=select.value;
+  const symbols=tickers.map(x=>x.symbol).filter(Boolean);
+  symbols.sort((a,b)=>a.localeCompare(b));
+  select.innerHTML="";
+  if(symbols.includes("BTCUSD")) symbols.splice(symbols.indexOf("BTCUSD"),1);
+  ["BTCUSD",...symbols].forEach(s=>{
+   const o=document.createElement("option");
+   o.value=s;o.textContent=s;select.appendChild(o);
+  });
+  select.value=symbols.includes(old)||old==="BTCUSD"?old:"BTCUSD";
+  await loadMarket();
+ }catch(e){
+  $("status").textContent="Market list error: "+e.message;
  }
 }
 
-document.getElementById("market").addEventListener("change",loadMarket);
-loadMarket();
-setInterval(loadMarket,15000);
+async function loadMarket(){
+ try{
+  const symbol=$("market").value;
+  const tickers=await getTickers();
+  const t=tickers.find(x=>x.symbol===symbol);
+  if(!t) throw Error("Market not found");
+  $("price").textContent=t.close||t.last_price||"Unavailable";
+  $("mark").textContent="Mark Price: "+(t.mark_price||"--");
+  $("volume").textContent="24h Volume: "+(t.volume||"--");
+  $("status").textContent="Live price updated: "+new Date().toLocaleTimeString();
+ }catch(e){
+  $("status").textContent="Data unavailable: "+e.message;
+ }
+}
 
+function ema(values,period){
+ let k=2/(period+1),v=values[0];
+ for(let i=1;i<values.length;i++) v=values[i]*k+v*(1-k);
+ return v;
+}
+
+function rsi(values,period=14){
+ let gains=0,losses=0;
+ for(let i=values.length-period;i<values.length;i++){
+  const d=values[i]-values[i-1];
+  if(d>0) gains+=d; else losses-=d;
+ }
+ if(losses===0) return 100;
+ return 100-(100/(1+gains/losses));
+}
+
+async function runAnalysis(){
+ $("analysisStatus").textContent="Candles download हो रही हैं...";
+ $("signal").textContent="Analyzing...";
+ try{
+  const symbol=$("market").value;
+  const resolution=$("timeframe").value;
+  const end=Math.floor(Date.now()/1000);
+  const seconds={"1m":60,"5m":300,"15m":900,"1h":3600,"4h":14400,"1d":86400}[resolution];
+  const start=end-seconds*100;
+  const url=API+"/v2/history/candles?resolution="+resolution+
+   "&symbol="+encodeURIComponent(symbol)+"&start="+start+"&end="+end;
+  const response=await fetch(url);
+  if(!response.ok) throw Error("Candle API error "+response.status);
+  const json=await response.json();
+  const candles=(json.result||[]).filter(c=>Number(c.close)>0)
+   .sort((a,b)=>a.time-b.time);
+  if(candles.length<30) throw Error("Analysis ke liye candles kam hain");
+
+  const closes=candles.map(c=>Number(c.close));
+  const e9=ema(closes.slice(-40),9);
+  const e21=ema(closes.slice(-60),21);
+  const rv=rsi(closes);
+  const last=candles[candles.length-1];
+  const entry=Number(last.close);
+
+  let tr=0;
+  for(let i=candles.length-14;i<candles.length;i++){
+   const c=candles[i],p=candles[i-1];
+   tr+=Math.max(Number(c.high)-Number(c.low),
+    Math.abs(Number(c.high)-Number(p.close)),
+    Math.abs(Number(c.low)-Number(p.close)));
+  }
+  const atr=tr/14;
+  let signal="WAIT",reason="Trend clear नहीं है। बेहतर setup का इंतजार करो।";
+  if(e9>e21 && rv>=50 && rv<70){
+   signal="BUY";
+   reason="EMA 9, EMA 21 से ऊपर है और RSI bullish range में है।";
+  }else if(e9<e21 && rv>30 && rv<=50){
+   signal="SELL";
+   reason="EMA 9, EMA 21 से नीचे है और RSI bearish range में है।";
+  }
+
+  $("signal").textContent=signal;
+  $("reason").textContent=reason;
+  $("rsi").textContent="RSI (14): "+rv.toFixed(2);
+  $("ema").textContent="EMA 9: "+e9.toFixed(2)+" | EMA 21: "+e21.toFixed(2);
+  $("entry").textContent="Reference Entry: "+entry;
+  $("sl").textContent=signal==="BUY"?(entry-1.5*atr).toFixed(2):
+   signal==="SELL"?(entry+1.5*atr).toFixed(2):"--";
+  $("target").textContent=signal==="BUY"?(entry+2*atr).toFixed(2):
+   signal==="SELL"?(entry-2*atr).toFixed(2):"--";
+  $("analysisStatus").textContent="Rule-based analysis updated: "+new Date().toLocaleTimeString();
+ }catch(e){
+  $("signal").textContent="Analysis unavailable";
+  $("reason").textContent=e.message;
+  $("analysisStatus").textContent="Analysis failed";
+ }
+}
+
+$("market").addEventListener("change",()=>{
+ loadMarket();
+ $("signal").textContent="Waiting...";
+});
+loadMarkets();
 if("serviceWorker" in navigator){
- navigator.serviceWorker.register("./service-worker.js");
+ navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 }
 </script>
 </body>
